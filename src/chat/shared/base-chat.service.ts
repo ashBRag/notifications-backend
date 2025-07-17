@@ -1,5 +1,5 @@
 // chat/shared/base-chat.service.ts
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable, Inject, Get } from '@nestjs/common';
 import { EventPattern } from '@nestjs/microservices';
 import { ChatGateway } from './chat.gateway';
 import { KafkaService } from '../../common/kafka/kafka.service';
@@ -12,34 +12,42 @@ export abstract class BaseChatService {
    @Inject(KafkaService) protected kafkaService: KafkaService,
  ) {}
 
- protected async processInbound(data: ChatMessage): Promise<void> {
-   const processed = await this.preProcess(data);
+ @Get('/health')
+ healthCheck() {
+   return { 
+     status: 'ok', 
+     service: this.constructor.name,
+     timestamp: new Date().toISOString()
+   };
+ }
+
+ // Consume from Kafka -> send to WebSocket clients
+ @EventPattern('chat.message')
+ protected async sendMessage(data: ChatMessage): Promise<void> {
+   const processed = await this.preProcessSend(data);
    this.gateway.sendToRoom(processed.roomId, processed);
-   await this.postProcess(processed);
+   await this.postProcessSend(processed);
  }
 
- protected async processOutbound(data: ChatMessage): Promise<void> {
-   const processed = await this.preProcessOutbound(data);
-   await this.kafkaService.emit(this.getOutboundTopic(), processed);
-   await this.postProcessOutbound(processed);
+ // Receive from WebSocket -> publish to Kafka
+ protected async receiveMessage(data: ChatMessage): Promise<void> {
+   const processed = await this.preProcessReceive(data);
+   await this.kafkaService.emit(this.getKafkaTopic(), processed);
+   await this.postProcessReceive(processed);
  }
 
- // Override in child classes for custom logic
- protected async preProcess(data: ChatMessage): Promise<ChatMessage> {
+ // Override for custom logic
+ protected async preProcessSend(data: ChatMessage): Promise<ChatMessage> {
    return data;
  }
 
- protected async postProcess(data: ChatMessage): Promise<void> {
-   // Override for analytics, logging, etc.
- }
+ protected async postProcessSend(data: ChatMessage): Promise<void> {}
 
- protected async preProcessOutbound(data: ChatMessage): Promise<ChatMessage> {
+ protected async preProcessReceive(data: ChatMessage): Promise<ChatMessage> {
    return data;
  }
 
- protected async postProcessOutbound(data: ChatMessage): Promise<void> {
-   // Override for logging, etc.
- }
+ protected async postProcessReceive(data: ChatMessage): Promise<void> {}
 
- protected abstract getOutboundTopic(): string;
+ protected abstract getKafkaTopic(): string;
 }
