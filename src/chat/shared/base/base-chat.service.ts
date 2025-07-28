@@ -18,7 +18,11 @@ export abstract class BaseChatService {
   async sendMessage(data: ChatMessage): Promise<void> {
     try {
       // Send via WebSocket
-      console.log('send message', data)
+      data.sender = 'bot';
+      data.id = data.id + 'bot';
+      data.text = data.content;
+      console.log('send message', data);
+
       if (data.roomId) {
         this.gateway.sendToRoom(data.roomId, data);
       } else {
