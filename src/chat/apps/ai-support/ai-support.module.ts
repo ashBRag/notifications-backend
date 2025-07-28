@@ -5,7 +5,7 @@ import { AiSupportChatGateway } from './ai-support.gateway';
 import { KafkaService } from '../../../common/kafka/kafka.service';
 
 @Module({
-  providers: [AiSupportChatGateway, AiSupportChatService, KafkaService],
+  providers: [KafkaService, AiSupportChatService, AiSupportChatGateway],
   exports: [AiSupportChatService, AiSupportChatGateway],
 })
 export class AiSupportChatModule {}

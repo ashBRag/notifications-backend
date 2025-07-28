@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/require-await */
 // apps/ai-support-chat/ai-support-chat.service.ts
 import { Injectable } from '@nestjs/common';
-import { EventPattern } from '@nestjs/microservices';
 import { BaseChatService } from '../../shared/base/base-chat.service';
 import { ChatMessage } from '../../../common/configs/types';
 import { AiSupportChatGateway } from './ai-support.gateway';
@@ -13,10 +12,10 @@ export class AiSupportChatService extends BaseChatService {
     super(gateway, kafkaService);
   }
 
-  @EventPattern('ai-support-chat-in')
   async handleChatIn(data: ChatMessage): Promise<void> {
     try {
       // AI Support specific processing
+      console.log('received', data);
       const processedMessage = await this.processMessage(data);
       await this.sendMessage(processedMessage);
     } catch (error) {

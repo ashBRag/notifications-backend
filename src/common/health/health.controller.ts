@@ -20,6 +20,12 @@ export class HealthController {
     private config: ConfigService,
   ) {}
 
+  private readonly services = [
+    { name: 'ai-support-chat', port: 8000, namespace: '/ai-support' },
+    //{ name: 'sales-chat', port: 3002, namespace: '/sales' },
+    //{ name: 'internal-chat', port: 3003, namespace: '/internal' },
+  ];
+
   @Get()
   @HealthCheck()
   async check() {
@@ -33,6 +39,16 @@ export class HealthController {
       0.85,
     );
 
+    // Create WebSocket health checks for all services
+    const websocketChecks = this.services.map(
+      (service) => () =>
+        this.ws.isHealthy(`${service.name}-websocket`, {
+          url: `http://localhost:${service.port}${service.namespace}`,
+          timeout: this.config.get('HEALTH_WS_TIMEOUT', 5000),
+          validateConnection: true,
+        }),
+    );
+
     return this.health.check([
       () => this.memory.checkHeap('memory_heap', memoryThreshold),
       () => this.memory.checkRSS('memory_rss', memoryThreshold),
@@ -42,10 +58,7 @@ export class HealthController {
           path: '/',
         }),
       () => this.kafka.isHealthy('kafka'),
-      () =>
-        this.ws.isHealthy('websocket', {
-          timeout: this.config.get('HEALTH_WS_TIMEOUT', 3000),
-        }),
+      ...websocketChecks,
     ]);
   }
 }

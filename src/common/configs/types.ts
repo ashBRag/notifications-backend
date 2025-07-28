@@ -1,4 +1,5 @@
 export interface ChatMessage {
+  sender: any;
   id: string;
   userId: string;
   roomId: string;

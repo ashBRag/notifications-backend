@@ -1,12 +1,10 @@
 // common/health/kafka-health.indicator.ts
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { HealthIndicatorResult, HealthCheckError } from '@nestjs/terminus';
 import { KafkaService } from '../kafka/kafka.service';
 
 @Injectable()
 export class KafkaHealthIndicator {
-  private readonly logger = new Logger(KafkaHealthIndicator.name);
-
   constructor(private readonly kafkaService: KafkaService) {}
 
   async isHealthy(key: string): Promise<HealthIndicatorResult> {
